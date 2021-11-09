@@ -1,18 +1,27 @@
 import * as THREE from "https://cdn.skypack.dev/three@0.134.0";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.134.0/examples/jsm/controls/OrbitControls.js";
+import { mergeBufferGeometries } from "https://cdn.skypack.dev/three@0.134.0/examples/jsm/utils/BufferGeometryUtils.js";
+
+// import * as a from "https://cdn.skypack.dev/three@0.134.0/examples/jsm/controls";
+
+const rangeEl = document.querySelector("#range");
+rangeEl.addEventListener("input", render);
 
 const canvas = document.querySelector("canvas");
 
-const length = 1200;
+let length = 1200;
 const width = 600;
-const thickness = 25;
-const lipHeight = 40;
+let thickness = 25;
+let lipHeight = 40;
 const lipThickness = 10;
 
-var scene = new THREE.Scene();
+let scene = new THREE.Scene();
 scene.background = new THREE.Color("black");
 
-var camera = new THREE.PerspectiveCamera(
+let axesHelper = new THREE.AxesHelper(1000);
+scene.add(axesHelper);
+
+let camera = new THREE.PerspectiveCamera(
   75,
   canvas.offsetWidth / canvas.offsetHeight,
   2,
@@ -21,108 +30,143 @@ var camera = new THREE.PerspectiveCamera(
 camera.position.set(200, 450, 1000);
 // camera.lookAt(0, 0, 0);
 
-var renderer = new THREE.WebGLRenderer({
+let renderer = new THREE.WebGLRenderer({
   canvas,
 });
 renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
 
-const color = 0xffffff;
-const intensity = 1;
-const light = new THREE.DirectionalLight(color, intensity);
+const light = new THREE.DirectionalLight(0xffffff);
 light.position.set(100, 500, 1000);
 scene.add(light);
 
+const light1 = new THREE.AmbientLight(0x404040);
+scene.add(light1);
+
 const controls = new OrbitControls(camera, canvas);
-// controls.target.set(0, 5, 0);
+controls.addEventListener("change", render);
 controls.update();
 
-let material = new THREE.LineBasicMaterial({
-  color: 0x0000ff,
-});
-let points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(1000, 0, 0)];
-let geometry = new THREE.BufferGeometry().setFromPoints(points);
-let lineOX = new THREE.Line(geometry, material);
-
-material = new THREE.LineBasicMaterial({
-  color: 0xff0000,
-});
-points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1000, 0)];
-geometry = new THREE.BufferGeometry().setFromPoints(points);
-let lineOY = new THREE.Line(geometry, material);
-
-material = new THREE.LineBasicMaterial({
-  color: 0x00ff00,
-});
-points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, 1000)];
-geometry = new THREE.BufferGeometry().setFromPoints(points);
-let lineOZ = new THREE.Line(geometry, material);
-
-let groupCoordSystem = new THREE.Group();
-groupCoordSystem.add(lineOX, lineOY, lineOZ);
-scene.add(groupCoordSystem);
 // ---------------------------------------------------------------------
-material = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
+// let material = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
+const texture = new THREE.TextureLoader().load("./images/fon.jpg", render);
+const planeTexture = new THREE.TextureLoader().load("./images/slot.png");
+// // texture.repeat.x = 0.5;
+// // texture.repeat.y = 0.3;
+// texture.wrapT = THREE.RepeatWrapping;
+// texture.wrapS = THREE.RepeatWrapping;
 
-geometry = new THREE.BoxBufferGeometry(length, thickness, width);
+let material = new THREE.MeshPhongMaterial({
+  // map: texture,
+  color: 0xaaaaaa,
+});
+
+let floorGeo = null;
+let lipRightGeo = null;
+let lipBottomGeo = null;
+let lipLeftGeo = null;
+let lipTopGeo = null;
+let geometry = null;
+
+function calcGeo() {
+  length = Number(rangeEl.value);
+
+  floorGeo = new THREE.BoxBufferGeometry(length, thickness, width);
+
+  lipRightGeo = new THREE.BoxBufferGeometry(lipThickness, lipHeight, width);
+  lipRightGeo.translate(
+    (length - lipThickness) / 2,
+    (lipHeight - thickness) / 2,
+    0
+  );
+
+  lipBottomGeo = new THREE.BoxBufferGeometry(length, lipHeight, lipThickness);
+  lipBottomGeo.translate(
+    0,
+    (lipHeight - thickness) / 2,
+    (width - lipThickness) / 2
+  );
+
+  lipLeftGeo = new THREE.BoxBufferGeometry(lipThickness, lipHeight, width);
+  lipLeftGeo.translate(
+    -(length - lipThickness) / 2,
+    (lipHeight - thickness) / 2,
+    0
+  );
+
+  lipTopGeo = new THREE.BoxBufferGeometry(length, lipHeight, lipThickness);
+  lipTopGeo.translate(
+    0,
+    (lipHeight - thickness) / 2,
+    -(width - lipThickness) / 2
+  );
+}
+
+// -------------------
+const planeGeo = new THREE.PlaneBufferGeometry(200, 200);
+const planeMaterial = new THREE.MeshBasicMaterial({
+  map: planeTexture,
+});
+const plane = new THREE.Mesh(planeGeo, planeMaterial);
+plane.rotation.x = -Math.PI / 2;
+plane.position.set(200, thickness / 2 + 1, 100);
+// ---------------------
+
+generateGeometry();
+
 let floor = new THREE.Mesh(geometry, material);
 
-geometry = new THREE.BoxBufferGeometry(lipThickness, lipHeight, width);
-let lipRight = new THREE.Mesh(geometry, material);
-lipRight.position.set(
-  (length - lipThickness) / 2,
-  (lipHeight - thickness) / 2,
-  0
-);
+floor.add(plane);
 
-geometry = new THREE.BoxBufferGeometry(length, lipHeight, lipThickness);
-let lipBottom = new THREE.Mesh(geometry, material);
-lipBottom.position.set(
-  0,
-  (lipHeight - thickness) / 2,
-  (width - lipThickness) / 2
-);
-
-geometry = new THREE.BoxBufferGeometry(lipThickness, lipHeight, width);
-let lipLeft = new THREE.Mesh(geometry, material);
-lipLeft.position.set(
-  -(length - lipThickness) / 2,
-  (lipHeight - thickness) / 2,
-  0
-);
-
-geometry = new THREE.BoxBufferGeometry(length, lipHeight, lipThickness);
-let lipTop = new THREE.Mesh(geometry, material);
-lipTop.position.set(
-  0,
-  (lipHeight - thickness) / 2,
-  -(width - lipThickness) / 2
-);
-
-let groupFloor = new THREE.Group();
-groupFloor.add(floor, lipRight, lipBottom, lipLeft, lipTop);
-
-scene.add(groupFloor);
+scene.add(floor);
 
 // -----------------------
 
-geometry = new THREE.PlaneBufferGeometry(200, 200);
-material = new THREE.MeshBasicMaterial({
-  color: 0xffffff,
-  // side: THREE.DoubleSide,
-});
-const plane = new THREE.Mesh(geometry, material);
-plane.rotation.x = -Math.PI / 2;
-plane.position.set(200, thickness / 2 + 1, 100);
-scene.add(plane);
+// geometry = new THREE.PlaneBufferGeometry(200, 200);
+// material = new THREE.MeshBasicMaterial({
+//   color: 0xffffff,
+//   // side: THREE.DoubleSide,
+// });
+// const plane = new THREE.Mesh(geometry, material);
+// plane.rotation.x = -Math.PI / 2;
+// plane.position.set(200, thickness / 2 + 1, 100);
+// // scene.add(plane);
 
 // --------------------------
-// renderer.render(scene, camera);
 // camera.updateProjectionMatrix();
 
-function animate() {
-  renderer.render(scene, camera);
+function generateGeometry() {
+  calcGeo();
 
-  requestAnimationFrame(animate);
+  geometry = mergeBufferGeometries([
+    floorGeo,
+    lipRightGeo,
+    lipBottomGeo,
+    lipLeftGeo,
+    lipTopGeo,
+  ]);
+
+  plane.position.set(length / 2 - 150, thickness / 2 + 1, 100);
 }
 
-animate();
+function render() {
+  // texture.repeat.x = length / texture.image.naturalWidth;
+  // texture.repeat.y = width / texture.image.naturalHeight;
+  // texture.wrapT = THREE.RepeatWrapping;
+  // texture.wrapS = THREE.RepeatWrapping;
+
+  floor.geometry.dispose();
+
+  generateGeometry();
+
+  floor.geometry = geometry;
+
+  renderer.render(scene, camera);
+  // thickness += 1;
+  // lipHeight += 1;
+  // floor.rotation.x += 0.01;
+  // floor.translateY(1);
+  // camera.updateProjectionMatrix();
+  // requestAnimationFrame(animate);
+}
+
+// render();
