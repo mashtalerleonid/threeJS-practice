@@ -49,7 +49,10 @@ controls.update();
 // ---------------------------------------------------------------------
 // let material = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
 const texture = new THREE.TextureLoader().load("./images/fon.jpg", render);
-const planeTexture = new THREE.TextureLoader().load("./images/slot.png");
+const planeTexture = new THREE.TextureLoader().load(
+  "./images/slot.png",
+  generatePlane
+);
 // // texture.repeat.x = 0.5;
 // // texture.repeat.y = 0.3;
 // texture.wrapT = THREE.RepeatWrapping;
@@ -66,6 +69,8 @@ let lipBottomGeo = null;
 let lipLeftGeo = null;
 let lipTopGeo = null;
 let geometry = null;
+let planeGeo = null;
+let plane = null;
 
 function calcGeo() {
   length = Number(rangeEl.value);
@@ -101,21 +106,24 @@ function calcGeo() {
   );
 }
 
-// -------------------
-const planeGeo = new THREE.PlaneBufferGeometry(200, 200);
-const planeMaterial = new THREE.MeshBasicMaterial({
-  map: planeTexture,
-});
-const plane = new THREE.Mesh(planeGeo, planeMaterial);
-plane.rotation.x = -Math.PI / 2;
-plane.position.set(200, thickness / 2 + 1, 100);
-// ---------------------
-
 generateGeometry();
 
 let floor = new THREE.Mesh(geometry, material);
 
-floor.add(plane);
+// -------------------
+function generatePlane() {
+  planeGeo = new THREE.PlaneBufferGeometry(200, 200);
+  const planeMaterial = new THREE.MeshBasicMaterial({
+    map: planeTexture,
+  });
+  plane = new THREE.Mesh(planeGeo, planeMaterial);
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.set(200, thickness / 2 + 1, 100);
+
+  floor.add(plane);
+  render();
+}
+// ---------------------
 
 scene.add(floor);
 
@@ -145,7 +153,9 @@ function generateGeometry() {
     lipTopGeo,
   ]);
 
-  plane.position.set(length / 2 - 150, thickness / 2 + 1, 100);
+  if (plane) {
+    plane.position.set(length / 2 - 150, thickness / 2 + 1, 100);
+  }
 }
 
 function render() {
