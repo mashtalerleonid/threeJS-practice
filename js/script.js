@@ -147,10 +147,10 @@ function generateGeometry() {
 
   geometry = mergeBufferGeometries([
     floorGeo,
-    lipRightGeo,
-    lipBottomGeo,
-    lipLeftGeo,
-    lipTopGeo,
+    // lipRightGeo,
+    // lipBottomGeo,
+    // lipLeftGeo,
+    // lipTopGeo,
   ]);
 
   if (plane) {
