@@ -1,6 +1,17 @@
 import * as THREE from "https://cdn.skypack.dev/three@0.134.0";
 import { OrbitControls } from "https://cdn.skypack.dev/three@0.134.0/examples/jsm/controls/OrbitControls.js";
 
+const loader = new THREE.CubeTextureLoader();
+loader.setPath("./images/textures/metal/");
+const textureCube = loader.load([
+  "px.jpg",
+  "nx.jpg",
+  "py.jpg",
+  "ny.jpg",
+  "pz.jpg",
+  "nz.jpg",
+]);
+
 const texture = new THREE.TextureLoader().load("./images/fon.jpg", animate);
 texture.wrapT = THREE.RepeatWrapping;
 texture.wrapS = THREE.RepeatWrapping;
@@ -27,11 +38,11 @@ let renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
 
-const light = new THREE.DirectionalLight(0xffffff);
-light.position.set(100, 500, 1000);
+const light = new THREE.DirectionalLight(0x404040);
+light.position.set(100, 500, 2000);
 scene.add(light);
-const light1 = new THREE.AmbientLight(0x404040);
-scene.add(light1);
+// const light1 = new THREE.AmbientLight(0xffffff);
+// scene.add(light1);
 
 const controls = new OrbitControls(camera, canvas);
 controls.addEventListener("change", animate);
@@ -257,7 +268,7 @@ function setNewUV() {
 }
 
 setNewPos();
-setNewUV();
+// setNewUV();
 
 // ---------------------
 const figGeometry = new THREE.BufferGeometry();
@@ -280,7 +291,7 @@ rangeEl.addEventListener("input", () => {
   calcPos();
   calcUV();
   setNewPos();
-  setNewUV();
+  // setNewUV();
 
   figGeometry.attributes.position.set(positions);
   figGeometry.attributes.uv.set(uvs);
@@ -293,9 +304,12 @@ figGeometry.computeVertexNormals();
 
 // ----------------------------------
 
-const figMaterial = new THREE.MeshPhongMaterial({
-  map: texture,
-  // color: 0xaaaaaa,
+const figMaterial = new THREE.MeshStandardMaterial({
+  envMap: textureCube,
+  // map: texture,
+  color: 0xffffff,
+  roughness: 0,
+  metalness: 0,
 });
 
 let mesh = new THREE.Mesh(figGeometry, figMaterial);
@@ -304,7 +318,7 @@ mesh.translateZ(-fig.width / 2);
 scene.add(mesh);
 
 function animate() {
-  requestAnimationFrame(animate);
+  // requestAnimationFrame(animate);
   renderer.render(scene, camera);
 }
 
