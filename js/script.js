@@ -268,7 +268,7 @@ function setNewUV() {
 }
 
 setNewPos();
-// setNewUV();
+setNewUV();
 
 // ---------------------
 const figGeometry = new THREE.BufferGeometry();
@@ -291,7 +291,7 @@ rangeEl.addEventListener("input", () => {
   calcPos();
   calcUV();
   setNewPos();
-  // setNewUV();
+  setNewUV();
 
   figGeometry.attributes.position.set(positions);
   figGeometry.attributes.uv.set(uvs);
@@ -306,8 +306,8 @@ figGeometry.computeVertexNormals();
 
 const figMaterial = new THREE.MeshStandardMaterial({
   envMap: textureCube,
-  // map: texture,
-  color: 0xffffff,
+  map: texture,
+  // color: 0xffffff,
   roughness: 0,
   metalness: 0,
 });
