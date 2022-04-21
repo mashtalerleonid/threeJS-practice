@@ -12,12 +12,13 @@ const textureCube = loader.load([
   "nz.jpg",
 ]);
 
-const texture = new THREE.TextureLoader().load("./images/fon.jpg", animate);
-texture.wrapT = THREE.RepeatWrapping;
-texture.wrapS = THREE.RepeatWrapping;
+// const texture = new THREE.TextureLoader().load("./images/fon.jpg", animate);
+// texture.wrapT = THREE.RepeatWrapping;
+// texture.wrapS = THREE.RepeatWrapping;
 
 const canvas = document.querySelector("canvas");
-const rangeEl = document.querySelector("#range");
+const rangeXEl = document.querySelector("#rangeX");
+const rangeZEl = document.querySelector("#rangeZ");
 
 let scene = new THREE.Scene();
 scene.background = new THREE.Color("black");
@@ -31,27 +32,28 @@ let camera = new THREE.PerspectiveCamera(
   2,
   2000
 );
-camera.position.set(200, 500, 1000);
+camera.position.set(100, 200, 1000);
 
 let renderer = new THREE.WebGLRenderer({
   canvas,
 });
 renderer.setSize(canvas.offsetWidth, canvas.offsetHeight);
+renderer.setClearColor(0xffffff);
 
 const light = new THREE.DirectionalLight(0x404040);
-light.position.set(100, 500, 2000);
+light.position.set(100, 500, 1000);
 scene.add(light);
 const light1 = new THREE.AmbientLight(0xffffff);
 scene.add(light1);
 
 const controls = new THREE.OrbitControls(camera, canvas);
-controls.addEventListener("change", animate);
+controls.addEventListener("change", () => {
+  renderer.render(scene, camera);
+});
 controls.update();
-
-// ----------------------------------
-
+// ---------------------------------
 let fig = {
-  length: Number(rangeEl.value),
+  length: Number(rangeXEl.value),
   width: 600,
   height: 30,
   lipHeight: 50,
@@ -74,9 +76,150 @@ fig.lipInnerHeight = fig.countLipInnerHeight();
 fig.innerLength = fig.countInnerLength();
 fig.innerWidth = fig.countInnerWidth();
 
+// ----------------------------------
+let loaderGLTF = new THREE.GLTFLoader();
+let loaderTexture = new THREE.TextureLoader();
+
+let obj = null;
+let geom = null;
+let geomArr = [];
+
+loaderGLTF.load("../models/01.glb", async function (gltf) {
+  obj = gltf.scene.children[0].children[0];
+  console.log(obj);
+
+  loaderTexture.load("../images/fon.jpg", (texture) => {
+    obj.children.forEach((mesh) => {
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.wrapS = THREE.RepeatWrapping;
+      mesh.material = new THREE.MeshStandardMaterial({
+        envMap: textureCube,
+        map: texture,
+        roughness: 0,
+        metalness: 0,
+      });
+
+      geomArr.push(mesh.geometry.clone());
+    });
+  });
+
+  scene.add(obj);
+
+  setTimeout(() => {
+    // geom = obj.geometry.clone();
+    geomArr.forEach((g, i) => {
+      console.log(i);
+      if (i !== 4) {
+        fooZ(1, g, i);
+      }
+    });
+
+    renderer.render(scene, camera);
+  }, 200);
+});
+
 let k = 150;
 let pos = [];
 let uv = [];
+let normal = [];
+
+function fooX(value, g, i) {
+  // console.log(...obj.geometry.attributes.position.array);
+  let geo = g.clone();
+  uv = [...g.attributes.uv.array];
+  normal = [...g.attributes.normal.array];
+
+  geo.scale(value, 1, 1);
+  // console.log(...obj.geometry.attributes.position.array);
+
+  // // pos = [...geo.attributes.position.array];
+  // uv = [...geo.attributes.uv.array];
+  // console.log(uv);
+  // uv.forEach((el) => {
+  //   el = el + 1;
+  // });
+  // calcPos();
+  // calcUV();
+
+  const numVertices = uv.length / 2;
+  // const positions = new Float32Array(numVertices * 3);
+  const uvs = new Float32Array(numVertices * 2);
+  for (let i = 0; i < uv.length; i += 2) {
+    if (normal[(i / 2) * 3] !== 1 && normal[(i / 2) * 3] !== -1) {
+      uvs.set([uv[i], uv[i + 1] * value], i);
+    } else {
+      uvs.set([uv[i], uv[i + 1]], i);
+    }
+  }
+
+  // setNewPos();
+  // setNewUV();
+
+  // obj.geometry.attributes.position.set(positions);
+  geo.attributes.uv.set(uvs);
+
+  // obj.geometry.setIndex([
+  //   0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 8, 9, 10, 10, 11, 8, 12, 13, 14, 14, 15,
+  //   12, 16, 17, 21, 21, 20, 16, 17, 18, 22, 22, 21, 17, 18, 19, 23, 23, 22, 18,
+  //   19, 16, 20, 20, 23, 19, 24, 25, 26, 26, 27, 24, 28, 29, 30, 30, 31, 28, 32,
+  //   33, 34, 34, 35, 32, 36, 37, 38, 38, 39, 36, 40, 41, 42, 42, 43, 40, 44, 45,
+  //   46, 46, 47, 44,
+  // ]);
+
+  // obj.geometry.computeVertexNormals();
+
+  // obj.geometry.attributes.position.needsUpdate = true;
+  // obj.geometry.attributes.uv.needsUpdate = true;
+
+  // console.log();
+  obj.children[i].geometry.copy(geo);
+  // renderer.render(scene, camera);
+
+  function setNewPos() {
+    let index = 0;
+    pos.forEach((p) => {
+      positions.set([p.x, p.y, p.z], index);
+      index += 3;
+    });
+  }
+
+  function setNewUV() {
+    let index = 0;
+    uv.forEach((p) => {
+      uvs.set([p[0], p[1]], index);
+      index += 2;
+    });
+  }
+}
+
+function fooZ(value, g, i) {
+  // console.log(...obj.geometry.attributes.position.array);
+  let geo = g.clone();
+  uv = [...g.attributes.uv.array];
+  normal = [...g.attributes.normal.array];
+
+  geo.scale(value, value, value);
+
+  const numVertices = uv.length / 2;
+  // const positions = new Float32Array(numVertices * 3);
+  const uvs = new Float32Array(numVertices * 2);
+  for (let i = 0; i < uv.length; i += 2) {
+    // if (normal[(i / 2) * 3] !== 1 && normal[(i / 2) * 3] !== -1) {
+    //   uvs.set([uv[i] * value, uv[i + 1]], i);
+    // } else {
+    //   uvs.set([uv[i], uv[i + 1]], i);
+    // }
+    uvs.set([uv[i] * value, uv[i + 1] * value], i);
+  }
+
+  geo.attributes.uv.set(uvs);
+
+  obj.children[i].geometry.copy(geo);
+}
+// setTimeout(() => {
+// console.log(obj.geometry.attributes.position.array);
+
+// }, 400);
 
 function calcPos() {
   pos = [
@@ -244,85 +387,64 @@ function calcUV() {
   ];
 }
 
-calcPos();
-calcUV();
-
-const numVertices = pos.length;
-const positions = new Float32Array(numVertices * 3);
-const uvs = new Float32Array(numVertices * 2);
-
-function setNewPos() {
-  let index = 0;
-  pos.forEach((p) => {
-    positions.set([p.x, p.y, p.z], index);
-    index += 3;
-  });
-}
-
-function setNewUV() {
-  let index = 0;
-  uv.forEach((p) => {
-    uvs.set([p[0], p[1]], index);
-    index += 2;
-  });
-}
-
-setNewPos();
-setNewUV();
+// setNewPos();
+// setNewUV();
 
 // ---------------------
-const figGeometry = new THREE.BufferGeometry();
-figGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-figGeometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
-figGeometry.setIndex([
-  0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 8, 9, 10, 10, 11, 8, 12, 13, 14, 14, 15,
-  12, 16, 17, 21, 21, 20, 16, 17, 18, 22, 22, 21, 17, 18, 19, 23, 23, 22, 18,
-  19, 16, 20, 20, 23, 19, 24, 25, 26, 26, 27, 24, 28, 29, 30, 30, 31, 28, 32,
-  33, 34, 34, 35, 32, 36, 37, 38, 38, 39, 36, 40, 41, 42, 42, 43, 40, 44, 45,
-  46, 46, 47, 44,
-]);
+// const figGeometry = new THREE.BufferGeometry();
+// figGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+// figGeometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+// figGeometry.setIndex([
+//   0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4, 8, 9, 10, 10, 11, 8, 12, 13, 14, 14, 15,
+//   12, 16, 17, 21, 21, 20, 16, 17, 18, 22, 22, 21, 17, 18, 19, 23, 23, 22, 18,
+//   19, 16, 20, 20, 23, 19, 24, 25, 26, 26, 27, 24, 28, 29, 30, 30, 31, 28, 32,
+//   33, 34, 34, 35, 32, 36, 37, 38, 38, 39, 36, 40, 41, 42, 42, 43, 40, 44, 45,
+//   46, 46, 47, 44,
+// ]);
 
-rangeEl.addEventListener("input", () => {
-  fig.length = Number(rangeEl.value);
-  fig.lipInnerHeight = fig.countLipInnerHeight();
-  fig.innerLength = fig.countInnerLength();
-  fig.innerWidth = fig.countInnerWidth();
+// figGeometry.attributes.position.set(positions);
+// figGeometry.attributes.uv.set(uvs);
+// figGeometry.attributes.position.needsUpdate = true;
+// figGeometry.attributes.uv.needsUpdate = true;
 
-  calcPos();
-  calcUV();
-  setNewPos();
-  setNewUV();
+rangeXEl.addEventListener(
+  "input",
+  (e) => {
+    geomArr.forEach((g, i) => {
+      if (i !== 4) {
+        fooX(Number(rangeXEl.value) / 1000, g, i);
+      }
+    });
+    // console.log(Number(rangeEl.value) / 1000);
+    renderer.render(scene, camera);
+  }
 
-  figGeometry.attributes.position.set(positions);
-  figGeometry.attributes.uv.set(uvs);
-  figGeometry.attributes.position.needsUpdate = true;
-  figGeometry.attributes.uv.needsUpdate = true;
-  animate();
-});
+  // fig.length = Number(rangeEl.value);
+  // fig.lipInnerHeight = fig.countLipInnerHeight();
+  // fig.innerLength = fig.countInnerLength();
+  // fig.innerWidth = fig.countInnerWidth();
 
-figGeometry.computeVertexNormals();
+  // calcPos();
+  // calcUV();
+  // setNewPos();
+  // setNewUV();
 
-// ----------------------------------
+  // figGeometry.attributes.position.set(positions);
+  // figGeometry.attributes.uv.set(uvs);
+  // figGeometry.attributes.position.needsUpdate = true;
+  // figGeometry.attributes.uv.needsUpdate = true;
+);
 
-const figMaterial = new THREE.MeshStandardMaterial({
-  envMap: textureCube,
-  map: texture,
-  // color: 0xffffff,
-  roughness: 0,
-  metalness: 0,
-});
-
-let mesh = new THREE.Mesh(figGeometry, figMaterial);
-mesh.translateX(-fig.length / 2);
-mesh.translateZ(-fig.width / 2);
-scene.add(mesh);
-
-function animate() {
-  // requestAnimationFrame(animate);
+rangeZEl.addEventListener("input", (e) => {
+  geomArr.forEach((g, i) => {
+    fooZ(Number(rangeZEl.value) / 1000, g, i);
+  });
   renderer.render(scene, camera);
-}
+});
 
-// -----------------------
+// figGeometry.computeVertexNormals();
+
+// -----------------------OLD
 // geometry = new THREE.PlaneBufferGeometry(200, 200);
 // material = new THREE.MeshBasicMaterial({
 //   color: 0xffffff,
@@ -332,4 +454,5 @@ function animate() {
 // plane.rotation.x = -Math.PI / 2;
 // plane.position.set(200, thickness / 2 + 1, 100);
 // // scene.add(plane);
+
 // --------------------------

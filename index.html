@@ -9,9 +9,33 @@
     <link rel="stylesheet" href="./css/style.css" />
   </head>
   <body>
-    <input type="range" name="" id="range" min="800" max="1200" value="1000" />
+    <input
+      class="rx"
+      type="range"
+      name=""
+      id="rangeX"
+      min="100"
+      max="4000"
+      value="1000"
+    />
+    <input
+      class="rz"
+      type="range"
+      name=""
+      id="rangeZ"
+      min="100"
+      max="4000"
+      value="1000"
+    />
     <canvas></canvas>
-    <!-- <script src="./js/three.js"></script> -->
-    <script src="./js/script.js" type="module"></script>
+
+    <script src="./js/three.min.js"></script>
+    <script src="./js/OrbitControls.js"></script>
+    <script src="./js/GLTFLoader.js"></script>
+    <script src="./js/GLTFExporter.js"></script>
+
+    <!-- <script src="./js/script-worktop.js" type="module"></script> -->
+    <script src="./js/script-thumb.js" type="module"></script>
+    <!-- <script src="./js/script.js" type="module"></script> -->
   </body>
 </html>
